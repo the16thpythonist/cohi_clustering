@@ -38,9 +38,13 @@ dependencies = [
     "numpy>=1.21.0,<2.0",
     "matplotlib>=3.4.0",
     "torch>=2.6.0,<2.8.0",
+    "torchvision>=0.20.0,<0.25.0",
+    "torch_geometric>=2.3.0",
     "pytorch_lightning>=2.4.0,<2.8.0",
     "pillow>=8.3.0",
-    "rich_click>=1.8.6,<2.0.0"
+    "rich_click>=1.8.6,<2.0.0",
+    "weasyprint>=65.1,<66.0",
+    "visual_graph_datasets>=0.10.0",
 ]
 
 # Executable Scripts

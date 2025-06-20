@@ -7,28 +7,28 @@ from torch.utils.data import DataLoader
 from cohi_clustering.testing import create_mock_image_dicts
 from cohi_clustering.data import data_list_from_image_dicts
 from cohi_clustering.data import collate_image_data
-from cohi_clustering.models import ContrastiveCNN
+from cohi_clustering.models import SimCLRContrastiveCNN
 
 
 class TestContrastiveCNN:
     
     def test_construction_basically_works(self):
         
-        model = ContrastiveCNN(
+        model = SimCLRContrastiveCNN(
             input_shape=(1, 28, 28),
             resnet_units=64,
             embedding_units=[128, 256],
             projection_units=[256, 1024],
             contrastive_factor=1.0,
         )
-        assert isinstance(model, ContrastiveCNN)
+        assert isinstance(model, SimCLRContrastiveCNN)
         
     def test_forward_basically_works(self):
         """
         If it generally works to do a forward pass with the model.
         """
         # Setting up the model
-        model = ContrastiveCNN(
+        model = SimCLRContrastiveCNN(
             input_shape=(1, 28, 28),
             resnet_units=64,
             embedding_units=[128, 256],
@@ -54,7 +54,7 @@ class TestContrastiveCNN:
         produces the same results as the original model.
         """
         # Setting up the model
-        model = ContrastiveCNN(
+        model = SimCLRContrastiveCNN(
             input_shape=(1, 28, 28),
             resnet_units=64,
             embedding_units=[128, 256],
@@ -83,9 +83,9 @@ class TestContrastiveCNN:
             assert os.path.exists(model_path)
             
             # Loading the model
-            loaded_model = ContrastiveCNN.load(model_path)
+            loaded_model = SimCLRContrastiveCNN.load(model_path)
             loaded_model.eval()
-            assert isinstance(loaded_model, ContrastiveCNN)
+            assert isinstance(loaded_model, SimCLRContrastiveCNN)
             
             # Performing a forward pass
             result_loaded = loaded_model(data)

@@ -23,6 +23,7 @@ def test_load_mnist_index_data_map():
     
     fig, ax = plt.subplots(ncols=1, nrows=1, figsize=(6, 6))
     image = example_data['image']
+    image = image.squeeze()  # Fix shape for matplotlib
     ax.imshow(image, cmap='gray')
     ax.axis('off')
     fig_path = os.path.join(ARTIFACTS_PATH, 'test_load_mnist_index_data_map.png')
