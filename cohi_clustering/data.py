@@ -4,6 +4,13 @@ import numpy as np
 from typing import Dict, List, Optional
 from PIL import Image
 
+from torch.utils.data import DataLoader
+from torch_geometric.data import Data as GraphData
+from torch_geometric.loader import DataLoader as GraphDataLoader
+
+# ===========
+# IMAGE DATA
+# ===========
 
 def load_mnist_index_data_map(mnist_path: str, load_images: bool = True) -> Dict[int, dict]:
     """
@@ -50,8 +57,10 @@ def load_mnist_index_data_map(mnist_path: str, load_images: bool = True) -> Dict
                 'split': 'train'
             }
             if load_images:
-                image = np.array(Image.open(file_path))
-                index_data_map[index]['image'] = image
+                image = Image.open(file_path).convert('L')
+                array = np.array(image)
+                array = np.expand_dims(array, axis=0)
+                index_data_map[index]['image'] = array
             
             index += 1
             
@@ -70,8 +79,10 @@ def load_mnist_index_data_map(mnist_path: str, load_images: bool = True) -> Dict
                 'split': 'test'
             }
             if load_images:
-                image = np.array(Image.open(file_path))
-                index_data_map[index]['image'] = image
+                image = Image.open(file_path).convert('L')
+                array = np.array(image)
+                array = np.expand_dims(array, axis=0)
+                index_data_map[index]['image'] = array
             
             index += 1
             
@@ -81,10 +92,11 @@ def load_mnist_index_data_map(mnist_path: str, load_images: bool = True) -> Dict
 
 class ImageData:
     
-    def __init__(self, x: torch.Tensor, y: torch.Tensor, single: bool = True, **kwargs):
+    def __init__(self, x: torch.Tensor, y: torch.Tensor, batch_size: int = 1, single: bool = True, **kwargs):
         self.x = x
         self.y = y
-        self.single = True
+        self.batch_size = batch_size
+        self.single = single
         
         for key, value in kwargs.items():
             setattr(self, key, value)
@@ -108,7 +120,7 @@ class ImageData:
         for key in keys:
             key_value_dict[key] = torch.stack([getattr(data, key) for data in data_list], dim=0)
             
-        return cls(**key_value_dict, single=False)
+        return cls(**key_value_dict, batch_size=len(data_list), single=False)
         
 
 def collate_image_data(batch: List[ImageData]):
@@ -118,13 +130,13 @@ def collate_image_data(batch: List[ImageData]):
 
 def data_from_image_dict(image_dict: dict) -> ImageData:
     
-    x = torch.tensor(image_dict['image'])
+    x = torch.tensor(image_dict['image'], dtype=torch.float32)
     
     # If the label is not given, we will use 0 as a mock value.
     if 'label' in image_dict:
         y = torch.tensor(image_dict['label'])
     else:
-        y = torch.tensor(0)
+        y = torch.tensor(0, dtype=torch.float32)
 
     return ImageData(x=x, y=y)
 
@@ -136,6 +148,38 @@ def data_list_from_image_dicts(image_dicts: List[dict]) -> List[ImageData]:
     
     for image_dict in image_dicts:
         data = data_from_image_dict(image_dict)
+        data_list.append(data)
+        
+    return data_list
+
+
+class ImageDataLoader(DataLoader):
+    
+    def __init__(self, *args, **kwargs):
+        DataLoader.__init__(self, *args, collate_fn=collate_image_data, **kwargs)
+
+
+# ===========
+# GRAPH DATA
+# ===========
+
+def data_from_graph_dict(graph: dict) -> GraphData:
+    
+    data = GraphData(
+        x=torch.tensor(graph['node_attributes'], dtype=torch.float32),
+        edge_index=torch.tensor(graph['edge_index'], dtype=torch.long),
+        edge_attr=torch.tensor(graph['edge_attributes'], dtype=torch.float32),
+        y=torch.tensor(graph['graph_labels'], dtype=torch.float32),
+    )
+    
+    return data
+
+
+def data_list_from_graph_dicts(graphs: List[dict]) -> List[GraphData]:
+    
+    data_list = []
+    for graph in graphs:
+        data = data_from_graph_dict(graph)
         data_list.append(data)
         
     return data_list

@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Cluster Report</title>
+</head>
+<body>
+    
+    {% for cluster_info in cluster_infos %}
+    <div class="cluster-page">
+
+        <div class="title-container">
+            <h1>Cluster {{ cluster_info['index'] }}</h1>
+        </div>
+
+        <h3>Cluster Information</h3>
+        <div class="information-container">
+            <div class="information-row">Num Elements: {{ cluster_info.get('size', '-') }}</div>
+        </div>
+
+        <h3>Examples</h3>
+
+        <div class="example-image-container">
+            {% for example in cluster_info['examples'] %}
+            <div class="example-item">
+                <img class="example-image" src="file://{{ example['image_path'] }}">
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    
+    {% if not loop.last %}
+    <p class="page-break" style="page-break-before: always"></p>
+    {% endif %}
+
+    {% endfor %}
+
+</body>
+</html>

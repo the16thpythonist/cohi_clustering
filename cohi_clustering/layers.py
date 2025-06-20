@@ -16,7 +16,7 @@ class ResNetLayer(nn.Module):
         self.lay_conv_2 = nn.Conv2d(units, units, kernel_size=3, stride=1, padding=1)
         self.lay_bn_2 = nn.BatchNorm2d(units)
         
-        self.lay_act = nn.SiLU()
+        self.lay_act = nn.ReLU()
         
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         

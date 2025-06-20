@@ -6,7 +6,7 @@ build-backend = "hatchling.build"
 name = "cohi_clustering"
 version = "0.1.0"
 description = "Contrastive Hierachical Clustering for Images and Graphs"
-license = "MIT license"
+license = { text = "MIT License" }
 readme = "README.rst"
 authors = [
     {name = "Jonas Teufel", email = "jonseb1998@gmail.com"}
@@ -39,6 +39,8 @@ dependencies = [
     "matplotlib>=3.4.0",
     "torch>=2.6.0,<2.8.0",
     "pytorch_lightning>=2.4.0,<2.8.0",
+    "pillow>=8.3.0",
+    "rich_click>=1.8.6,<2.0.0"
 ]
 
 # Executable Scripts
@@ -54,7 +56,7 @@ cmdata = "cohi_clustering.cli:cli"
 skip-excluded-dirs=true
 
 [tool.hatch.build.targets.wheel]
-packages = ["chem_mat_data"]
+packages = ["cohi_clustering"]
 
 # Version Bumping
 # ===============

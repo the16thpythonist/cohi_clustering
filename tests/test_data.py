@@ -14,16 +14,15 @@ def test_load_mnist_index_data_map():
     """
     If it generally works to load the MNIST dataset from the file system.
     """
-    index_data_map: dict = load_mnist_index_data_map('/home/jonas/Downloads/mnist_png')
+    index_data_map: dict = load_mnist_index_data_map('/media/data/Downloads/mnist_png')
     assert isinstance(index_data_map, dict), "Should return a dictionary"
     assert len(index_data_map) > 0
     print(f'number of elements: {len(index_data_map)}')
     
     example_data = index_data_map[0]
-    image_path = example_data['image_path']
     
     fig, ax = plt.subplots(ncols=1, nrows=1, figsize=(6, 6))
-    image = Image.open(image_path)
+    image = example_data['image']
     ax.imshow(image, cmap='gray')
     ax.axis('off')
     fig_path = os.path.join(ARTIFACTS_PATH, 'test_load_mnist_index_data_map.png')
@@ -33,7 +32,10 @@ def test_load_mnist_index_data_map():
 class TestImageData:
     
     def test_collate_image_data_with_dataloader(self):
-        
+        """
+        If it is possible to use the ``DataLoader`` class to obtain the collated/batched versions
+        of a list of ImageData objects.
+        """
         # ~ testing normal functionality
         data1 = ImageData(x=torch.rand(1, 28, 28), y=torch.tensor(0))
         data2 = ImageData(x=torch.rand(1, 28, 28), y=torch.tensor(1))
@@ -63,10 +65,17 @@ class TestImageData:
             assert data.split.shape[0] == 2
             
     def test_moving_image_data_to_device_works(self):
-        
+        """
+        It if is possible to use the ``ImageData.to`` method to move the tensors contained in the 
+        ImageData object to a different device.
+        """
         # First of all testing if it works to move the image data to the cuda device.
         image_data = ImageData(x=torch.rand(1, 28, 28), y=torch.tensor(0))
         image_data = image_data.to('cuda')
         assert image_data.x.device.type == 'cuda'
         assert image_data.y.device.type == 'cuda'
         
+        # Now test if I can put it back to the cpu.
+        image_data = image_data.to('cpu')
+        assert image_data.x.device.type == 'cpu'
+        assert image_data.y.device.type == 'cpu'
