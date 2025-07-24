@@ -32,28 +32,44 @@ mpl.use('Agg')
 
 # == DATASET PARAMETERS ==
 
+# :param NUM_TRAIN:
+#      Number of training samples to be used in the dataset. If set to a positive integer
+NUM_TRAIN: Union[int, float] = 0.4
+# :param NUM_VAL:
+#      Number of validation samples to be used in the dataset. If set to a positive integer, the dataset will
+#      be subsampled to this number of samples. If set to None, all samples will be used.
+#      If set to a float, it will be interpreted as a fraction of the total dataset size.
+#      E.g. 0.8 means 80% of the dataset will be used for training.
 NUM_VAL: Union[int, float] = 0.05
-
+# :param NUM_TEST:
+#      Number of test samples to be used in the dataset. If set to a positive integer, the dataset will
+#      be subsampled to this number of samples. If set to None, all samples will be used.
+#      If set to a float, it will be interpreted as a fraction of the total dataset size.
+#      E.g. 0.1 means 10% of the dataset will be used for testing.
 NUM_TEST: Union[int, float] = 0.1
 
-CONTRASTIVE_TAU: float = 0.3
-CLUSTER_TAU: float = 1.0
+# == MODEL PARAMETERS ==
+
+CONTRASTIVE_TAU: float = 1.0
+CLUSTER_TAU: float = 0.8
 
 EMBEDDING_UNITS: List[int] = [1024, 512]
-PROJECTION_UNITS: List[int] = [2048]
-CLUSTER_UNITS: List[int] = []
+PROJECTION_UNITS: List[int] = [ ]
+CLUSTER_UNITS: List[int] = [ ]
 BATCH_ACCUMULATE: int = 8
-CLUSTER_DEPTH: int = 4
+CLUSTER_DEPTH: int = 3
 CLUSTERING_WARMUP_EPOCHS: int = 5
-EPOCHS_PER_LEVEL: int = 5
+EPOCHS_PER_LEVEL: int = 10
 
-CLUSTERING_FACTOR: float = 1.0
+CLUSTERING_FACTOR: float = 0.1
 
 # == TRAINING PARAMETERS ==
 
 LEARNING_RATE: float = 1e-3
-BATCH_SIZE: int = 128
-EPOCHS: int = 50
+BATCH_SIZE: int = 210
+EPOCHS: int = 100
+
+# == EXPERIMENT PARAMETERS ==
 
 __DEBUG__: bool = True
 
@@ -97,6 +113,10 @@ def train_test_split(e: Experiment,
     
     train_indices = indices
     
+    if isinstance(e.NUM_TRAIN, float):
+        num_train = int(e.NUM_TRAIN * len(train_indices))
+        train_indices = random.sample(train_indices, k=num_train)
+    
     return train_indices, val_indices, test_indices
 
 
@@ -135,8 +155,7 @@ def train_model(e: Experiment,
             device = pl_module.device
             pl_module.to('cpu')
             
-            # TRACK METRICS
-            # -------------
+            ## --- track metrics ---
             
             # Iterate through all logged values and track them with the experiment
             for key, value in trainer.callback_metrics.items():
@@ -144,8 +163,7 @@ def train_model(e: Experiment,
                     # Track each value using the experiment's track method
                     e.track(key, value.item())
             
-            # VALIDATION FORWARD PASS
-            # -----------------------
+            ## --- validation forward pass ---
             
             e.log('running training forward pass...')
             results_train: List[dict] = pl_module.forward_image_dicts(train_reduced_loader)
@@ -153,8 +171,7 @@ def train_model(e: Experiment,
             e.log('running validation forward pass...')
             results_val: List[dict] = pl_module.forward_image_dicts(val_loader)
             
-            # LINEAR EVALUATION PERFORMANCE
-            # -----------------------------
+            ## --- linear evaluation performance ---
             
             e.log('evaluation linear evaluation performance...')
             # Prepare training data
@@ -178,8 +195,7 @@ def train_model(e: Experiment,
             e.track('linear_accuracy', float(accuracy))
             e.log(f' * accuracy: {accuracy*100:.2f}%')
             
-            # CLUSTERING PERFORMANCE
-            # ----------------------
+            ## --- clustering performance ---
             
             e.log('evaluating k-means clustering performance...')
             
@@ -190,8 +206,7 @@ def train_model(e: Experiment,
             e.track('nmi_raw', float(nmi))
             e.log(f' * NMI: {nmi:.4f}')
             
-            # UMAP EMBEDDING SPACE
-            # --------------------
+            ## --- umap embedding space ---
             
             e.log('plotting umap of the embeddings...')
             embeddings = np.stack([result['embedding'] for result in results_val], axis=0)
@@ -215,8 +230,7 @@ def train_model(e: Experiment,
             
             e.track('umap_embedding', fig)
             
-            # UMAP PROJECTION SPACE
-            # ---------------------
+            ## --- umap projection space ---
             
             e.log('plotting umap of the projections...')
             projections = np.stack([result['projection'] for result in results_val], axis=0)
@@ -235,8 +249,7 @@ def train_model(e: Experiment,
             
             e.track('umap_projection', fig)
             
-            # TRACKING EMBEDDING PROPERTIES
-            # -----------------------------
+            ## --- tracking embedding properties ---
             
             e.log('calculating embedding properties...')
             embedding_variance = np.mean(np.std(embeddings, axis=0))
@@ -263,8 +276,7 @@ def train_model(e: Experiment,
             ax.legend()
             e.track('embedding_properties', fig)
             
-            # EVALUATING CLUSTERING
-            # ---------------------
+            ## --- evaluating clustering ---
             
             e.log('evaluating cluster assignments...')
                 
@@ -296,7 +308,7 @@ def train_model(e: Experiment,
         cluster_depth=e.CLUSTER_DEPTH,
         contrastive_factor=1.0,
         contrastive_tau=e.CONTRASTIVE_TAU,
-        cluster_factor=1.0,
+        cluster_factor=e.CLUSTERING_FACTOR,
         cluster_tau=e.CLUSTER_TAU,
         learning_rate=e.LEARNING_RATE,
     )

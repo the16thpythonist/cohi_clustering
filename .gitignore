@@ -144,3 +144,7 @@ cython_debug/
 tests/artifacts/*
 slurm-*.out
 _*.sh
+
+# SLURM
+slurm-*.out
+**/.aslurm/*

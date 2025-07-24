@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 
 class ResNetLayer(nn.Module):
@@ -32,3 +33,27 @@ class ResNetLayer(nn.Module):
         x = self.lay_act(x)
         
         return x
+    
+    
+class LogitContrastiveLoss(nn.Module):
+    
+    def __init__(self, eps: float = 1e-5):
+        super(LogitContrastiveLoss, self).__init__()
+        self.eps = eps
+        
+    def forward(self, sim: torch.Tensor,
+                ) -> torch.Tensor:
+        
+        sim = sim.clamp(min=self.eps, max=1.0 - self.eps)
+        
+        logits = torch.log(sim / (1.0 - sim))
+        
+        N2 = sim.size(0)
+        mask = torch.eye(N2, dtype=torch.bool, device=sim.device)
+        logits = logits.masked_fill(mask, float('-inf'))
+        
+        N = N2 // 2
+        positive_idx = torch.arange(N, 2*N, device=sim.device)
+        positive_idx = torch.cat([positive_idx, torch.arange(0, N, device=sim.device)], dim=0)
+        
+        return F.cross_entropy(logits, positive_idx)

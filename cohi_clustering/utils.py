@@ -1,4 +1,5 @@
 import os
+import json
 import shutil
 import pathlib
 import logging
@@ -60,6 +61,43 @@ class CsvString(click.ParamType):
 
 # == STRING UTILITY ==
 # These are some helper functions for some common string related problems
+
+
+class CustomEncoder(json.JSONEncoder):
+    """
+    Custom JSON encoder that extends the default ``json.JSONEncoder`` to support encoding of numpy ndarrays.
+
+    This encoder will automatically detect numpy ndarray objects and convert them into Python lists before encoding,
+    allowing seamless serialization of data structures containing ndarrays. For all other types, the default encoding
+    behavior is used.
+
+    **Features:**
+    - Detects numpy ndarray objects and converts them to lists for JSON serialization.
+    - Falls back to the default encoder for all other types.
+    - Useful for serializing experiment results, model weights, or any data containing numpy arrays.
+
+    **Example Usage:**
+    .. code-block:: python
+
+        import json
+        import numpy as np
+        from cohi_clustering.utils import CustomEncoder
+
+        arr = np.array([[1, 2], [3, 4]])
+        data = {'array': arr, 'value': 42}
+        json_str = json.dumps(data, cls=CustomEncoder)
+        # json_str will be: '{"array": [[1, 2], [3, 4]], "value": 42}'
+
+    **Notes:**
+    - This encoder does not handle other non-serializable types (e.g., sets, complex objects) unless further extended.
+    - For large arrays, converting to lists may increase memory usage.
+    """
+    def default(self, obj):
+        import numpy as np
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+        return super().default(obj)
+
 
 def random_string(length: int,
                   chars: string.ascii_letters + string.digits
